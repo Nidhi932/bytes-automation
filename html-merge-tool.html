@@ -1,0 +1,1903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HTML Inner Experience Merger</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --border: #2d3a4f;
+      --text: #e7ecf3;
+      --muted: #8b9cb3;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --success: #22c55e;
+      --error: #ef4444;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    .wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+    }
+
+    .section-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin: 1.25rem 0 0.65rem;
+      padding-bottom: 0.35rem;
+      border-bottom: 1px solid var(--border);
+      color: #cbd5e1;
+    }
+
+    .section-title:first-child { margin-top: 0; }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.75rem 1rem;
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--muted);
+      margin-bottom: 0.3rem;
+    }
+
+    .field > input {
+      width: 100%;
+      padding: 0.45rem 0.55rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #0f1419;
+      color: var(--text);
+      font-size: 0.85rem;
+    }
+
+    .field > input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .color-picker {
+      position: relative;
+    }
+
+    .color-picker.is-disabled {
+      opacity: 0.55;
+      pointer-events: none;
+    }
+
+    .color-picker-row {
+      display: flex;
+      align-items: stretch;
+      gap: 0.35rem;
+    }
+
+    .color-swatch-btn {
+      width: 2.1rem;
+      min-width: 2.1rem;
+      height: 2.1rem;
+      padding: 0;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      background: #000;
+      flex-shrink: 0;
+    }
+
+    .color-swatch-btn:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .color-text-input {
+      flex: 1;
+      min-width: 0;
+      padding: 0.45rem 0.55rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #0f1419;
+      color: var(--text);
+      font-size: 0.85rem;
+      font-family: ui-monospace, Consolas, monospace;
+    }
+
+    .color-text-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .color-format-select {
+      width: 4.25rem;
+      padding: 0.45rem 0.35rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #0f1419;
+      color: var(--text);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .color-popup {
+      position: absolute;
+      z-index: 50;
+      top: calc(100% + 0.35rem);
+      left: 0;
+      width: 240px;
+      padding: 0.65rem;
+      background: #fff;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+    }
+
+    .color-popup[hidden] {
+      display: none !important;
+    }
+
+    .color-sv-panel {
+      position: relative;
+      width: 100%;
+      height: 150px;
+      border-radius: 4px;
+      cursor: crosshair;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    .color-sv-base {
+      position: absolute;
+      inset: 0;
+      background: hsl(0, 100%, 50%);
+    }
+
+    .color-sv-white {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to right, #fff, transparent);
+    }
+
+    .color-sv-black {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, #000, transparent);
+    }
+
+    .color-sv-handle {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      margin: -7px 0 0 -7px;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+      pointer-events: none;
+    }
+
+    .color-popup-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.55rem;
+    }
+
+    .color-eyedropper-btn {
+      width: 1.75rem;
+      height: 1.75rem;
+      padding: 0;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      color: #374151;
+      font-size: 1rem;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .color-eyedropper-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .color-preview-dot {
+      width: 1.75rem;
+      height: 1.75rem;
+      border-radius: 50%;
+      border: 1px solid #d1d5db;
+      flex-shrink: 0;
+      background: #000;
+    }
+
+    .color-hue-slider {
+      flex: 1;
+      width: 100%;
+      height: 14px;
+      margin: 0;
+      padding: 0;
+      border: none;
+      background: transparent;
+      -webkit-appearance: none;
+      appearance: none;
+      cursor: pointer;
+    }
+
+    .color-hue-slider::-webkit-slider-runnable-track {
+      height: 12px;
+      border-radius: 6px;
+      background: linear-gradient(
+        to right,
+        #f00 0%,
+        #ff0 17%,
+        #0f0 33%,
+        #0ff 50%,
+        #00f 67%,
+        #f0f 83%,
+        #f00 100%
+      );
+    }
+
+    .color-hue-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      margin-top: -2px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2px solid #fff;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+    }
+
+    .color-hue-slider::-moz-range-track {
+      height: 12px;
+      border-radius: 6px;
+      border: none;
+      background: linear-gradient(
+        to right,
+        #f00 0%,
+        #ff0 17%,
+        #0f0 33%,
+        #0ff 50%,
+        #00f 67%,
+        #f0f 83%,
+        #f00 100%
+      );
+    }
+
+    .color-hue-slider::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      border: none;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+    }
+
+    header { margin-bottom: 2rem; }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      margin-top: 0.5rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .marker {
+      margin-top: 0.75rem;
+      padding: 0.6rem 0.85rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: ui-monospace, Consolas, monospace;
+      font-size: 0.8rem;
+      color: #93c5fd;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem 1.35rem;
+      margin-bottom: 1rem;
+    }
+
+    .card label {
+      display: block;
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 0.35rem;
+    }
+
+    .card .hint {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 0.85rem;
+    }
+
+    input[type="file"] {
+      width: 100%;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    input[type="file"]::file-selector-button {
+      margin-right: 0.75rem;
+      padding: 0.45rem 0.9rem;
+      border: none;
+      border-radius: 6px;
+      background: var(--border);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+
+    input[type="file"]::file-selector-button:hover {
+      background: #3d4f6a;
+    }
+
+    .file-name {
+      margin-top: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--success);
+      min-height: 1.2em;
+    }
+
+    .file-name.empty { color: var(--muted); }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 1.5rem;
+    }
+
+    button {
+      padding: 0.65rem 1.25rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent-hover);
+    }
+
+    .btn-secondary {
+      background: var(--border);
+      color: var(--text);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: #3d4f6a;
+    }
+
+    .status {
+      margin-top: 1.25rem;
+      padding: 0.85rem 1rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      display: none;
+    }
+
+    .status.show { display: block; }
+
+    .status.info {
+      background: rgba(59, 130, 246, 0.12);
+      border: 1px solid rgba(59, 130, 246, 0.35);
+      color: #bfdbfe;
+    }
+
+    .status.success {
+      background: rgba(34, 197, 94, 0.12);
+      border: 1px solid rgba(34, 197, 94, 0.35);
+      color: #bbf7d0;
+    }
+
+    .status.error {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #fecaca;
+    }
+
+    .stats {
+      margin-top: 1rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.65rem;
+    }
+
+    .stat {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.65rem 0.85rem;
+      font-size: 0.8rem;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 1.1rem;
+      color: var(--text);
+      margin-bottom: 0.15rem;
+    }
+
+    .stat span { color: var(--muted); }
+
+    .card-disabled {
+      opacity: 0.55;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .field .var-name {
+      display: block;
+      font-size: 0.68rem;
+      color: #64748b;
+      font-family: ui-monospace, Consolas, monospace;
+      margin-top: 0.2rem;
+    }
+
+    .files-ok {
+      color: var(--success);
+      font-size: 0.8rem;
+      margin-top: 0.5rem;
+    }
+
+    .field textarea {
+      width: 100%;
+      min-height: 72px;
+      padding: 0.5rem 0.55rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: #0f1419;
+      color: var(--text);
+      font-size: 0.78rem;
+      font-family: ui-monospace, Consolas, monospace;
+      resize: vertical;
+    }
+
+    .field textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .upload-row {
+      margin-top: 0.4rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .upload-row input[type="file"] {
+      margin-top: 0.25rem;
+    }
+
+    .field-full { grid-column: 1 / -1; }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text);
+      cursor: pointer;
+      margin-bottom: 0.5rem;
+    }
+
+    .checkbox-label input[type="checkbox"] {
+      width: 1rem;
+      height: 1rem;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .cm-logo-hint {
+      font-size: 0.78rem;
+      color: #93c5fd;
+      font-family: ui-monospace, Consolas, monospace;
+      margin-top: 0.35rem;
+      padding: 0.5rem 0.65rem;
+      background: rgba(59, 130, 246, 0.08);
+      border-radius: 6px;
+      border: 1px solid rgba(59, 130, 246, 0.25);
+    }
+
+    .svg-toggle-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 1.25rem;
+      margin: 0.5rem 0 0.65rem;
+      padding: 0.55rem 0.75rem;
+      background: rgba(15, 20, 25, 0.5);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    .radio-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .radio-label input[type="radio"] {
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .svg-panel {
+      margin-top: 0.35rem;
+    }
+
+    .svg-panel[hidden] {
+      display: none !important;
+    }
+
+    .svg-option-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 0.35rem;
+    }
+
+    .svg-upload-box {
+      padding: 0.65rem 0.75rem;
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      background: rgba(15, 20, 25, 0.6);
+    }
+
+    .svg-upload-box input[type="file"] {
+      width: 100%;
+      margin-top: 0.25rem;
+    }
+
+    .svg-loaded-msg {
+      font-size: 0.75rem;
+      color: var(--success);
+      margin-top: 0.35rem;
+      min-height: 1em;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>HTML Inner Experience Merger</h1>
+      <p class="subtitle">
+        Keeps everything above the marker in the bytes-master file, then replaces
+        everything from the marker downward with the matching section from standard-implementation.
+        If swiper-bundleH CSS/JS are present in bytes-master,
+        <code>hookHandler.init();</code> is enabled in <code>ppCbReelJsReady</code>.
+        Customize hook fonts, colors, chevrons, and layout dimensions in step 3.
+      </p>
+      <div class="marker">&lt;!-- Inner experience starts from below --&gt;</div>
+    </header>
+
+    <div class="card">
+      <label for="bytesFile">1. Bytes master (target)</label>
+      <p class="hint">e.g. bytes-master (50).html — header and hook are preserved.</p>
+      <input type="file" id="bytesFile" accept=".html,.htm,text/html">
+      <div class="file-name empty" id="bytesName">No file selected</div>
+    </div>
+
+    <div class="card">
+      <label for="standardFile">2. Standard implementation (source)</label>
+      <p class="hint">e.g. standard-implementation (36).html — inner experience is copied from here.</p>
+      <input type="file" id="standardFile" accept=".html,.htm,text/html">
+      <div class="file-name empty" id="standardName">No file selected</div>
+    </div>
+
+    <div class="card card-disabled" id="styleCard">
+      <label>3. Hook CSS customization</label>
+      <p class="hint" id="styleLockMsg">Select both HTML files (steps 1 and 2) first. Then enter values — they replace <code>{variableName}</code> placeholders and <code>tagd:style</code> values in the merged hook CSS.</p>
+      <p class="files-ok" id="filesOkMsg" hidden>Both files loaded. Edit values below, then merge.</p>
+
+      <p class="section-title">Header text</p>
+      <div class="field-grid">
+        <div class="field"><label for="headerFontFamily">Font family</label><input id="headerFontFamily" data-var="HookHeaderTitleFontFamily" data-format="text" disabled><span class="var-name">{HookHeaderTitleFontFamily}</span></div>
+        <div class="field"><label for="headerFontSize">Font size (px)</label><input id="headerFontSize" data-var="HookHeaderTitleFontSize" data-format="px" disabled><span class="var-name">{HookHeaderTitleFontSize}</span></div>
+        <div class="field"><label for="headerFontColor">Font color</label><input id="headerFontColor" data-var="HookHeaderTitleFontColor" data-format="hex" disabled><span class="var-name">{HookHeaderTitleFontColor}</span></div>
+      </div>
+
+      <p class="section-title">Play icon (.icon-wrap)</p>
+      <div class="field-grid">
+        <div class="field"><label for="iconWrapWidth">Icon width (px)</label><input id="iconWrapWidth" data-var="iconWrapWidth" data-format="px" disabled><span class="var-name">{iconWrapWidth}</span></div>
+        <div class="field"><label for="iconFillOpacity">Circle fill opacity (0–1)</label><input id="iconFillOpacity" data-var="iconFillOpacity" data-format="opacity" disabled><span class="var-name">{iconFillOpacity}</span></div>
+        <div class="field"><label for="playBtnBg">Circle / play btn background</label><input id="playBtnBg" data-var="HookPlayBtnBackground" data-format="hex" disabled><span class="var-name">{HookPlayBtnBackground}</span></div>
+        <div class="field"><label for="playBtnArrow">Play arrow color</label><input id="playBtnArrow" data-var="HookPlayBtnArrow" data-format="hex" disabled><span class="var-name">{HookPlayBtnArrow}</span></div>
+        <div class="field"><label for="iconFillOpacityHover">Hover circle opacity (0–1)</label><input id="iconFillOpacityHover" data-var="iconFillOpacityHover" data-format="opacity" disabled><span class="var-name">{iconFillOpacityHover}</span></div>
+        <div class="field"><label for="playBtnBgHover">Hover circle background</label><input id="playBtnBgHover" data-var="HookPlayBtnBackgroundHover" data-format="hex" disabled><span class="var-name">{HookPlayBtnBackgroundHover}</span></div>
+        <div class="field"><label for="playBtnArrowHover">Hover play arrow color</label><input id="playBtnArrowHover" data-var="HookPlayBtnArrowHover" data-format="hex" disabled><span class="var-name">{HookPlayBtnArrowHover}</span></div>
+      </div>
+
+      <p class="section-title">Slide title</p>
+      <div class="field-grid">
+        <div class="field"><label for="titleFontFamily">Font family</label><input id="titleFontFamily" data-var="HookVideoTitleFontFamily" data-format="text" disabled><span class="var-name">{HookVideoTitleFontFamily}</span></div>
+        <div class="field"><label for="titleFontSize">Font size (px)</label><input id="titleFontSize" data-var="HookVideoTitleFontSize" data-format="px" disabled><span class="var-name">{HookVideoTitleFontSize}</span></div>
+        <div class="field"><label for="titleFontColor">Font color</label><input id="titleFontColor" data-var="HookVideoTitleColor" data-format="hex" disabled><span class="var-name">{HookVideoTitleColor}</span></div>
+      </div>
+
+      <p class="section-title">CTA button</p>
+      <div class="field-grid">
+        <div class="field"><label for="ctaFontFamily">Font family</label><input id="ctaFontFamily" data-var="HookCTATextFontFamily" data-format="text" disabled><span class="var-name">{HookCTATextFontFamily}</span></div>
+        <div class="field"><label for="ctaFontSize">Font size (px)</label><input id="ctaFontSize" data-var="HookCTATextFontSize" data-format="px" disabled><span class="var-name">{HookCTATextFontSize}</span></div>
+        <div class="field"><label for="ctaTextColor">Text color</label><input id="ctaTextColor" data-var="HookCTAText" data-format="hex" disabled><span class="var-name">{HookCTAText}</span></div>
+        <div class="field"><label for="ctaBackground">Background color</label><input id="ctaBackground" data-var="HookCTABackground" data-format="hex" disabled><span class="var-name">{HookCTABackground}</span></div>
+        <div class="field"><label for="ctaBorderColor">Border color</label><input id="ctaBorderColor" data-var="HookCTABorder" data-format="hex" disabled><span class="var-name">{HookCTABorder}</span></div>
+        <div class="field"><label for="ctaHoverTextColor">Hover text color</label><input id="ctaHoverTextColor" data-var="HookCTATextHover" data-format="hex" disabled><span class="var-name">{HookCTATextHover}</span></div>
+        <div class="field"><label for="ctaHoverBackground">Hover background</label><input id="ctaHoverBackground" data-var="HookCTABackgroundHover" data-format="hex" disabled><span class="var-name">{HookCTABackgroundHover}</span></div>
+        <div class="field"><label for="ctaHoverBorderColor">Hover border color</label><input id="ctaHoverBorderColor" data-var="HookCTABorderHover" data-format="hex" disabled><span class="var-name">{HookCTABorderHover}</span></div>
+      </div>
+
+      <p class="section-title">Chevron (slider arrows)</p>
+      <div class="field-grid">
+        <div class="field"><label for="chevronBg">Circle / background</label><input id="chevronBg" data-var="HookSliderBtn" data-format="hex" disabled><span class="var-name">{HookSliderBtn}</span></div>
+        <div class="field"><label for="chevronArrow">Arrow color</label><input id="chevronArrow" data-var="HookSliderBtnArrow" data-format="hex" disabled><span class="var-name">{HookSliderBtnArrow}</span></div>
+        <div class="field"><label for="chevronHoverBg">Hover background</label><input id="chevronHoverBg" data-var="HookSliderBtnHover" data-format="hex" disabled><span class="var-name">{HookSliderBtnHover}</span></div>
+        <div class="field"><label for="chevronHoverArrow">Hover arrow color</label><input id="chevronHoverArrow" data-var="HookSliderBtnArrowHover" data-format="hex" disabled><span class="var-name">{HookSliderBtnArrowHover}</span></div>
+      </div>
+
+      <p class="section-title">Layout &amp; dimensions</p>
+      <div class="field-grid">
+        <div class="field"><label for="hookMaxWidth">.reels-hook-wrapper max-width</label><input id="hookMaxWidth" data-var="hookMaxWidth" data-format="px" disabled><span class="var-name">{hookMaxWidth}</span></div>
+        <div class="field"><label for="slideWidth">Slide width</label><input id="slideWidth" data-var="slideWidth" data-format="px" disabled><span class="var-name">{slideWidth}</span></div>
+        <div class="field"><label for="slideHeight">Slide height</label><input id="slideHeight" data-var="slideHeight" data-format="px" disabled><span class="var-name">{slideHeight}</span></div>
+        <div class="field"><label for="slideMarginRight">Slide margin-right</label><input id="slideMarginRight" data-var="slideMarginRight" data-format="px" disabled><span class="var-name">{slideMarginRight}</span></div>
+      </div>
+    </div>
+
+    <div class="card card-disabled" id="brandingCard">
+      <label>4. Branding</label>
+      <p class="hint">For each SVG slot, choose <strong>Paste</strong> or <strong>Upload</strong> — only the selected method is active.</p>
+
+      <p class="section-title">Top left logo (desktop header)</p>
+      <div class="field-grid">
+        <div class="field field-full">
+          <span class="var-name">{topLeftLogoSvg}</span>
+          <div class="svg-toggle-row" role="radiogroup" aria-label="Top left logo SVG input method">
+            <label class="radio-label">
+              <input type="radio" name="topLeftLogoSvgMode" value="paste" checked disabled>
+              Paste SVG code
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="topLeftLogoSvgMode" value="upload" disabled>
+              Upload .svg file
+            </label>
+          </div>
+          <div class="svg-panel" id="topLeftLogoSvgPastePanel">
+            <textarea id="topLeftLogoSvg" data-brand-var="topLeftLogoSvg" data-brand-type="svg" disabled placeholder="Paste full &lt;svg&gt;...&lt;/svg&gt; markup here"></textarea>
+          </div>
+          <div class="svg-panel" id="topLeftLogoSvgUploadPanel" hidden>
+            <div class="svg-upload-box">
+              <input type="file" accept=".svg,image/svg+xml,.xml,text/xml" data-upload-for="topLeftLogoSvg" disabled>
+              <div class="svg-loaded-msg" id="topLeftLogoSvgUploadMsg" aria-live="polite"></div>
+            </div>
+          </div>
+        </div>
+        <div class="field"><label for="topLeftLogoXlDesktop">Logo width (default desktop)</label><input id="topLeftLogoXlDesktop" data-brand-var="topLeftLogoXlDesktop" data-brand-format="px" disabled><span class="var-name">{topLeftLogoXlDesktop}</span></div>
+        <div class="field"><label for="topLeftLogoDesktop">Logo width (max-height ≤700px)</label><input id="topLeftLogoDesktop" data-brand-var="topLeftLogoDesktop" data-brand-format="px" disabled><span class="var-name">{topLeftLogoDesktop}</span></div>
+      </div>
+
+      <p class="section-title">Creator &amp; more from</p>
+      <div class="field-grid">
+        <div class="field field-full">
+          <label class="checkbox-label">
+            <input type="checkbox" id="creatorLogoFromCm" disabled>
+            Upload icon from CM (use logo.svg from image path)
+          </label>
+          <div class="cm-logo-hint" id="creatorLogoCmHint" hidden>
+            Replaces {creatorLogoSvg} with:<br>
+            &lt;img src="&lt;tag:image_path_new /&gt;/logo.svg" alt=""&gt;
+          </div>
+          <div id="creatorLogoSvgFields">
+            <span class="var-name">{creatorLogoSvg}</span>
+            <div class="svg-toggle-row" role="radiogroup" aria-label="Creator logo SVG input method">
+              <label class="radio-label">
+                <input type="radio" name="creatorLogoSvgMode" value="paste" checked disabled>
+                Paste SVG code
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="creatorLogoSvgMode" value="upload" disabled>
+                Upload .svg file
+              </label>
+            </div>
+            <div class="svg-panel" id="creatorLogoSvgPastePanel">
+              <textarea id="creatorLogoSvg" data-brand-var="creatorLogoSvg" data-brand-type="svg" disabled placeholder="Paste full &lt;svg&gt;...&lt;/svg&gt; markup here"></textarea>
+            </div>
+            <div class="svg-panel" id="creatorLogoSvgUploadPanel" hidden>
+              <div class="svg-upload-box">
+                <input type="file" accept=".svg,image/svg+xml,.xml,text/xml" data-upload-for="creatorLogoSvg" disabled>
+                <div class="svg-loaded-msg" id="creatorLogoSvgUploadMsg" aria-live="polite"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="field"><label for="creatorName">Creator name</label><input id="creatorName" data-brand-var="creatorName" data-brand-format="text" disabled><span class="var-name">{creatorName}</span></div>
+        <div class="field"><label for="moreFromText">More from text</label><input id="moreFromText" data-brand-var="MoreFromText" data-brand-format="text" disabled><span class="var-name">{MoreFromText}</span></div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="btn-primary" id="mergeBtn" disabled>Merge &amp; download</button>
+      <button type="button" class="btn-secondary" id="previewBtn" disabled>Preview stats</button>
+    </div>
+
+    <div class="status" id="status" role="status"></div>
+
+    <div class="stats" id="stats" hidden>
+      <div class="stat"><strong id="statBefore">—</strong><span>Lines kept (bytes)</span></div>
+      <div class="stat"><strong id="statInner">—</strong><span>Lines inserted (standard)</span></div>
+      <div class="stat"><strong id="statTotal">—</strong><span>Lines in output</span></div>
+    </div>
+  </div>
+
+  <script>
+    const MARKER = '<!-- Inner experience starts from below -->';
+
+    const bytesInput = document.getElementById('bytesFile');
+    const standardInput = document.getElementById('standardFile');
+    const mergeBtn = document.getElementById('mergeBtn');
+    const previewBtn = document.getElementById('previewBtn');
+    const statusEl = document.getElementById('status');
+    const statsEl = document.getElementById('stats');
+
+    let bytesContent = null;
+    let standardContent = null;
+    let bytesFileName = '';
+    let standardFileName = '';
+    let parsedStylesFromBytes = {};
+
+    const styleCard = document.getElementById('styleCard');
+    const brandingCard = document.getElementById('brandingCard');
+    const styleLockMsg = document.getElementById('styleLockMsg');
+    const filesOkMsg = document.getElementById('filesOkMsg');
+
+    function readFile(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsText(file);
+      });
+    }
+
+    function findMarkerIndex(content, label) {
+      const idx = content.indexOf(MARKER);
+      if (idx === -1) {
+        throw new Error(`Marker not found in ${label}:\n${MARKER}`);
+      }
+      return idx;
+    }
+
+    function hasSwiperBundleInBytes(bytesHtml) {
+      return (
+        bytesHtml.includes('swiper-bundleH.min.css') &&
+        bytesHtml.includes('swiper-bundleH.min.js')
+      );
+    }
+
+    function uncommentHookHandlerInit(html) {
+      return html.replace(
+        /(\s*)\/\/hookHandler\.init\(\);(\s*\/\/ slider with leftmostAnimation)/,
+        '$1hookHandler.init();$2'
+      );
+    }
+
+    function mergeHtml(bytesHtml, standardHtml) {
+      const bytesIdx = findMarkerIndex(bytesHtml, 'bytes master');
+      const standardIdx = findMarkerIndex(standardHtml, 'standard implementation');
+
+      const before = bytesHtml.slice(0, bytesIdx);
+      const inner = standardHtml.slice(standardIdx);
+
+      let result = before + inner;
+      const swiperBundle = hasSwiperBundleInBytes(bytesHtml);
+      let hookHandlerUncommented = false;
+
+      if (swiperBundle) {
+        const updated = uncommentHookHandlerInit(result);
+        hookHandlerUncommented = updated !== result;
+        result = updated;
+      }
+
+      if (!bytesContent || !standardContent) {
+        throw new Error('Select both bytes-master and standard-implementation files before merging.');
+      }
+
+      result = applyCustomStyles(result, getStyleFormValues());
+      result = applyBranding(result, getBrandingFormValues());
+
+      return {
+        result,
+        beforeLines: before.split('\n').length,
+        innerLines: inner.split('\n').length,
+        totalLines: result.split('\n').length,
+        swiperBundle,
+        hookHandlerUncommented
+      };
+    }
+
+    const STYLE_DEFAULTS = {
+      HookHeaderTitleFontFamily: 'Jost-Bold',
+      HookHeaderTitleFontSize: '28px',
+      HookHeaderTitleFontColor: '#212529',
+      HookVideoTitleFontFamily: 'Jost_Regular',
+      HookVideoTitleFontSize: '18px',
+      HookVideoTitleColor: '#ffffff',
+      HookCTATextFontFamily: 'Jost-Bold',
+      HookCTATextFontSize: '16px',
+      HookCTAText: '#ffffff',
+      HookCTABackground: '#E5363A',
+      HookCTABorder: '',
+      HookCTATextHover: '#ffffff',
+      HookCTABackgroundHover: '#000000',
+      HookCTABorderHover: '',
+      HookSliderBtn: '#87D3DB',
+      HookSliderBtnArrow: '#000000',
+      HookSliderBtnHover: '#E5363A',
+      HookSliderBtnArrowHover: '#ffffff',
+      iconWrapWidth: '60px',
+      iconFillOpacity: '0.4',
+      HookPlayBtnBackground: '#000000',
+      HookPlayBtnArrow: '#ffffff',
+      iconFillOpacityHover: '0.2',
+      HookPlayBtnBackgroundHover: '#000000',
+      HookPlayBtnArrowHover: '#ffffff',
+      hookMaxWidth: '750px',
+      slideWidth: '319px',
+      slideHeight: '567px',
+      slideMarginRight: '16px'
+    };
+
+    function escapeAttr(val) {
+      return String(val).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+    }
+
+    function clamp(n, min, max) {
+      return Math.min(max, Math.max(min, n));
+    }
+
+    function rgbToHex(r, g, b) {
+      return (
+        '#' +
+        [r, g, b]
+          .map((x) => clamp(Math.round(x), 0, 255).toString(16).padStart(2, '0'))
+          .join('')
+      );
+    }
+
+    function parseHexColor(hex) {
+      let h = String(hex || '')
+        .trim()
+        .replace(/^#/, '');
+      if (!h) return null;
+      if (h.length === 3) h = h.split('').map((c) => c + c).join('');
+      if (!/^[0-9a-f]{6}$/i.test(h)) return null;
+      return {
+        r: parseInt(h.slice(0, 2), 16),
+        g: parseInt(h.slice(2, 4), 16),
+        b: parseInt(h.slice(4, 6), 16)
+      };
+    }
+
+    function rgbToHsl(r, g, b) {
+      r /= 255;
+      g /= 255;
+      b /= 255;
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      let h = 0;
+      let s = 0;
+      const l = (max + min) / 2;
+      if (max !== min) {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+          case r:
+            h = (g - b) / d + (g < b ? 6 : 0);
+            break;
+          case g:
+            h = (b - r) / d + 2;
+            break;
+          default:
+            h = (r - g) / d + 4;
+            break;
+        }
+        h /= 6;
+      }
+      return { h: h * 360, s: s * 100, l: l * 100 };
+    }
+
+    function hslToRgb(h, s, l) {
+      h = ((h % 360) + 360) % 360;
+      s /= 100;
+      l /= 100;
+      const c = (1 - Math.abs(2 * l - 1)) * s;
+      const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+      const m = l - c / 2;
+      let r = 0;
+      let g = 0;
+      let b = 0;
+      if (h < 60) [r, g, b] = [c, x, 0];
+      else if (h < 120) [r, g, b] = [x, c, 0];
+      else if (h < 180) [r, g, b] = [0, c, x];
+      else if (h < 240) [r, g, b] = [0, x, c];
+      else if (h < 300) [r, g, b] = [x, 0, c];
+      else [r, g, b] = [c, 0, x];
+      return {
+        r: (r + m) * 255,
+        g: (g + m) * 255,
+        b: (b + m) * 255
+      };
+    }
+
+    function colorToHex(raw) {
+      const v = String(raw || '').trim();
+      if (!v) return '';
+      if (v.startsWith('#')) return normalizeValue(v, 'hex');
+      const rgb = v.match(/^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)/i);
+      if (rgb) return rgbToHex(+rgb[1], +rgb[2], +rgb[3]);
+      const hsl = v.match(/^hsla?\(\s*([\d.]+)\s*,\s*([\d.]+)%?\s*,\s*([\d.]+)%?/i);
+      if (hsl) {
+        const { r, g, b } = hslToRgb(+hsl[1], +hsl[2], +hsl[3]);
+        return rgbToHex(r, g, b);
+      }
+      if (/^[0-9a-f]{3,8}$/i.test(v.replace(/^#/, ''))) return normalizeValue(v, 'hex');
+      return '';
+    }
+
+    function formatColorDisplay(hex, format) {
+      const rgb = parseHexColor(hex);
+      if (!rgb) return '';
+      if (format === 'rgb') return 'rgb(' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ')';
+      if (format === 'hsl') {
+        const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+        return (
+          'hsl(' +
+          Math.round(hsl.h) +
+          ', ' +
+          Math.round(hsl.s) +
+          '%, ' +
+          Math.round(hsl.l) +
+          '%)'
+        );
+      }
+      return normalizeValue(hex, 'hex').toUpperCase();
+    }
+
+    function parseColorDisplayInput(text, format) {
+      const v = String(text || '').trim();
+      if (!v) return '';
+      if (format === 'hex') return colorToHex(v);
+      if (format === 'rgb') {
+        const m = v.match(/^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)/i);
+        if (m) return rgbToHex(+m[1], +m[2], +m[3]);
+        return colorToHex(v);
+      }
+      if (format === 'hsl') {
+        const m = v.match(/^hsla?\(\s*([\d.]+)\s*,\s*([\d.]+)%?\s*,\s*([\d.]+)%?/i);
+        if (m) {
+          const { r, g, b } = hslToRgb(+m[1], +m[2], +m[3]);
+          return rgbToHex(r, g, b);
+        }
+        return colorToHex(v);
+      }
+      return colorToHex(v);
+    }
+
+    function initColorPickers() {
+      document.querySelectorAll('#styleCard input[data-format="hex"]').forEach((sourceInput) => {
+        if (sourceInput.dataset.pickerInit) return;
+        sourceInput.dataset.pickerInit = '1';
+        sourceInput.type = 'hidden';
+
+        const wrap = document.createElement('div');
+        wrap.className = 'color-picker';
+        sourceInput.parentNode.insertBefore(wrap, sourceInput);
+        wrap.appendChild(sourceInput);
+
+        const row = document.createElement('div');
+        row.className = 'color-picker-row';
+
+        const swatchBtn = document.createElement('button');
+        swatchBtn.type = 'button';
+        swatchBtn.className = 'color-swatch-btn';
+        swatchBtn.setAttribute('aria-label', 'Open color picker');
+
+        const textInput = document.createElement('input');
+        textInput.type = 'text';
+        textInput.className = 'color-text-input';
+        textInput.autocomplete = 'off';
+        textInput.spellcheck = false;
+
+        const formatSelect = document.createElement('select');
+        formatSelect.className = 'color-format-select';
+        formatSelect.innerHTML =
+          '<option value="hex" selected>HEX</option><option value="rgb">RGB</option><option value="hsl">HSL</option>';
+
+        row.append(swatchBtn, textInput, formatSelect);
+        wrap.appendChild(row);
+
+        const popup = document.createElement('div');
+        popup.className = 'color-popup';
+        popup.hidden = true;
+        popup.innerHTML =
+          '<div class="color-sv-panel">' +
+          '<div class="color-sv-base"></div>' +
+          '<div class="color-sv-white"></div>' +
+          '<div class="color-sv-black"></div>' +
+          '<div class="color-sv-handle"></div>' +
+          '</div>' +
+          '<div class="color-popup-controls">' +
+          '<button type="button" class="color-eyedropper-btn" title="Pick color from screen" aria-label="Eyedropper">&#128167;</button>' +
+          '<span class="color-preview-dot"></span>' +
+          '<input type="range" class="color-hue-slider" min="0" max="360" value="0" aria-label="Hue">' +
+          '</div>';
+        wrap.appendChild(popup);
+
+        const svPanel = popup.querySelector('.color-sv-panel');
+        const svBase = popup.querySelector('.color-sv-base');
+        const svHandle = popup.querySelector('.color-sv-handle');
+        const previewDot = popup.querySelector('.color-preview-dot');
+        const hueSlider = popup.querySelector('.color-hue-slider');
+        const eyedropperBtn = popup.querySelector('.color-eyedropper-btn');
+
+        let hue = 0;
+        let sat = 0;
+        let val = 0;
+        let openPopup = false;
+
+        function hsvToHex(h, s, v) {
+          const c = v * s;
+          const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+          const m = v - c;
+          let r = 0;
+          let g = 0;
+          let b = 0;
+          if (h < 60) [r, g, b] = [c, x, 0];
+          else if (h < 120) [r, g, b] = [x, c, 0];
+          else if (h < 180) [r, g, b] = [0, c, x];
+          else if (h < 240) [r, g, b] = [0, x, c];
+          else if (h < 300) [r, g, b] = [x, 0, c];
+          else [r, g, b] = [c, 0, x];
+          return rgbToHex((r + m) * 255, (g + m) * 255, (b + m) * 255);
+        }
+
+        function hexToHsv(hex) {
+          const rgb = parseHexColor(hex);
+          if (!rgb) return { h: 0, s: 0, v: 0 };
+          const r = rgb.r / 255;
+          const g = rgb.g / 255;
+          const b = rgb.b / 255;
+          const max = Math.max(r, g, b);
+          const min = Math.min(r, g, b);
+          const d = max - min;
+          let h = 0;
+          if (d !== 0) {
+            if (max === r) h = ((g - b) / d) % 6;
+            else if (max === g) h = (b - r) / d + 2;
+            else h = (r - g) / d + 4;
+            h *= 60;
+            if (h < 0) h += 360;
+          }
+          const s = max === 0 ? 0 : d / max;
+          return { h, s, v: max };
+        }
+
+        function syncUiFromHsv() {
+          svBase.style.background = 'hsl(' + hue + ', 100%, 50%)';
+          svHandle.style.left = sat * 100 + '%';
+          svHandle.style.top = (1 - val) * 100 + '%';
+          hueSlider.value = String(Math.round(hue));
+          const hex = hsvToHex(hue, sat, val);
+          swatchBtn.style.background = hex;
+          previewDot.style.background = hex;
+          sourceInput.value = hex;
+          textInput.value = formatColorDisplay(hex, formatSelect.value);
+        }
+
+        function setFromHex(hex) {
+          const normalized = colorToHex(hex);
+          if (!normalized) {
+            sourceInput.value = '';
+            textInput.value = '';
+            hue = 0;
+            sat = 0;
+            val = 0;
+            svBase.style.background = 'hsl(0, 100%, 50%)';
+            svHandle.style.left = '0%';
+            svHandle.style.top = '100%';
+            hueSlider.value = '0';
+            swatchBtn.style.background = '#000000';
+            previewDot.style.background = '#000000';
+            return;
+          }
+          const hsv = hexToHsv(normalized);
+          hue = hsv.h;
+          sat = hsv.s;
+          val = hsv.v;
+          syncUiFromHsv();
+        }
+
+        function setDisabled(disabled) {
+          wrap.classList.toggle('is-disabled', disabled);
+          sourceInput.disabled = disabled;
+          textInput.disabled = disabled;
+          formatSelect.disabled = disabled;
+          swatchBtn.disabled = disabled;
+          eyedropperBtn.disabled = disabled || !window.EyeDropper;
+          hueSlider.disabled = disabled;
+          if (disabled) closePicker();
+        }
+
+        function closePicker() {
+          openPopup = false;
+          popup.hidden = true;
+        }
+
+        function openPicker() {
+          if (wrap.classList.contains('is-disabled')) return;
+          openPopup = true;
+          popup.hidden = false;
+        }
+
+        function setSvFromEvent(ev) {
+          const rect = svPanel.getBoundingClientRect();
+          const clientX = ev.touches ? ev.touches[0].clientX : ev.clientX;
+          const clientY = ev.touches ? ev.touches[0].clientY : ev.clientY;
+          sat = clamp((clientX - rect.left) / rect.width, 0, 1);
+          val = clamp(1 - (clientY - rect.top) / rect.height, 0, 1);
+          syncUiFromHsv();
+        }
+
+        swatchBtn.addEventListener('click', () => {
+          if (openPopup) closePicker();
+          else openPicker();
+        });
+
+        hueSlider.addEventListener('input', () => {
+          hue = Number(hueSlider.value);
+          syncUiFromHsv();
+        });
+
+        let draggingSv = false;
+        svPanel.addEventListener('mousedown', (ev) => {
+          draggingSv = true;
+          setSvFromEvent(ev);
+        });
+        svPanel.addEventListener('touchstart', (ev) => {
+          draggingSv = true;
+          setSvFromEvent(ev);
+          ev.preventDefault();
+        });
+        window.addEventListener('mousemove', (ev) => {
+          if (draggingSv) setSvFromEvent(ev);
+        });
+        window.addEventListener('touchmove', (ev) => {
+          if (draggingSv) setSvFromEvent(ev);
+        });
+        window.addEventListener('mouseup', () => {
+          draggingSv = false;
+        });
+        window.addEventListener('touchend', () => {
+          draggingSv = false;
+        });
+
+        formatSelect.addEventListener('change', () => {
+          const hex = sourceInput.value || colorToHex(textInput.value);
+          if (hex) textInput.value = formatColorDisplay(hex, formatSelect.value);
+        });
+
+        textInput.addEventListener('change', () => {
+          const hex = parseColorDisplayInput(textInput.value, formatSelect.value);
+          if (hex) setFromHex(hex);
+          else if (!textInput.value.trim()) {
+            sourceInput.value = '';
+            textInput.value = '';
+          }
+        });
+
+        textInput.addEventListener('keydown', (ev) => {
+          if (ev.key === 'Enter') textInput.dispatchEvent(new Event('change'));
+        });
+
+        eyedropperBtn.disabled = !window.EyeDropper;
+        eyedropperBtn.addEventListener('click', async () => {
+          if (!window.EyeDropper) return;
+          try {
+            const dropper = new EyeDropper();
+            const result = await dropper.open();
+            setFromHex(result.sRGBHex);
+          } catch (_) {
+            /* user cancelled */
+          }
+        });
+
+        document.addEventListener('click', (ev) => {
+          if (!openPopup) return;
+          if (!wrap.contains(ev.target)) closePicker();
+        });
+
+        wrap._cpApi = { setFromHex, setDisabled };
+        setFromHex(sourceInput.value);
+        setDisabled(sourceInput.disabled);
+      });
+    }
+
+    function syncColorPickersFromForm() {
+      document.querySelectorAll('#styleCard input[data-format="hex"]').forEach((input) => {
+        const picker = input.closest('.color-picker');
+        if (picker && picker._cpApi) picker._cpApi.setFromHex(input.value);
+      });
+    }
+
+    function setColorPickersDisabled(disabled) {
+      document.querySelectorAll('#styleCard .color-picker').forEach((picker) => {
+        if (picker._cpApi) picker._cpApi.setDisabled(disabled);
+      });
+    }
+
+    function normalizeValue(raw, format) {
+      if (raw === undefined || raw === null) return '';
+      let val = String(raw).trim();
+      if (!val) return '';
+      if (format === 'px') {
+        if (/^\d+(\.\d+)?$/.test(val)) return val + 'px';
+        return val;
+      }
+      if (format === 'hex') {
+        if (!val.startsWith('#')) val = '#' + val.replace(/^#/, '');
+        return val;
+      }
+      if (format === 'opacity') {
+        if (/^\d+$/.test(val) && Number(val) > 1) return String(Number(val) / 100);
+        return val;
+      }
+      return val;
+    }
+
+    function extractTagdValue(html, name) {
+      const quoted = html.match(new RegExp('name="' + name + '"\\s+value="([^"]*)"', 'i'));
+      if (quoted) {
+        const v = quoted[1];
+        if (v === '{' + name + '}') return STYLE_DEFAULTS[name] || '';
+        return v;
+      }
+      const brace = html.match(new RegExp('name="' + name + '"\\s+value=\\{' + name + '\\}', 'i'));
+      if (brace) return STYLE_DEFAULTS[name] || '';
+      return '';
+    }
+
+    function parseStylesFromBytes(html) {
+      const styles = { ...STYLE_DEFAULTS };
+
+      document.querySelectorAll('#styleCard input[data-var]').forEach((input) => {
+        const key = input.dataset.var;
+        const fromTagd = extractTagdValue(html, key);
+        if (fromTagd) {
+          styles[key] = fromTagd;
+          return;
+        }
+        const braceVal = html.match(new RegExp('\\{' + key + '\\}'));
+        if (braceVal && STYLE_DEFAULTS[key]) {
+          styles[key] = STYLE_DEFAULTS[key];
+        }
+      });
+
+      const maxW = html.match(/\.reels-hook-wrapper\s*\{\s*max-width:\s*([^;}\s{]+)/i);
+      if (maxW && !maxW[1].includes('{')) styles.hookMaxWidth = maxW[1].trim();
+
+      const slide = html.match(/\.reels-hook\s+li\s*\{[^}]*width:\s*([^;!}\s]+)[^}]*height:\s*([^;!}\s]+)/i);
+      if (slide) {
+        if (!slide[1].includes('{')) styles.slideWidth = slide[1].trim();
+        if (!slide[2].includes('{')) styles.slideHeight = slide[2].trim();
+      }
+
+      const slideMargin = html.match(/\.reels-hook\s+li\s*\{[^}]*margin-right:\s*([^;!}\s{]+)/i);
+      if (slideMargin && !slideMargin[1].includes('{')) styles.slideMarginRight = slideMargin[1].trim();
+
+      const ctaBlock = html.match(/\.reels-hook\s+li\s+\.cta-wrap\s*\{([^}]+)\}/i);
+      if (ctaBlock) {
+        const border = ctaBlock[1].match(/border:\s*1px\s+solid\s+([^;]+)/i);
+        if (border) styles.HookCTABorder = border[1].trim();
+      }
+
+      const hoverCta = html.match(/\.reels-hook\s+li:hover\s+\.cta-wrap\s*\{([^}]+)\}/i);
+      if (hoverCta) {
+        const border = hoverCta[1].match(/border:\s*1px\s+solid\s+([^;]+)/i);
+        if (border) styles.HookCTABorderHover = border[1].trim();
+      }
+
+      const iconWrap = html.match(/\.reels-hook\s+li\s+\.icon-wrap\s*\{[^}]*width:\s*([^;}\s]+)/i);
+      if (iconWrap && !iconWrap[1].includes('{')) styles.iconWrapWidth = iconWrap[1].trim();
+
+      const iconOpacity = html.match(
+        /\.reels-hook\s+li\s+\.icon-wrap\s+svg\s+circle\s*\{fill-opacity:\s*([^;}\s]+)/i
+      );
+      if (iconOpacity && !iconOpacity[1].includes('{')) styles.iconFillOpacity = iconOpacity[1].trim();
+
+      const iconHover = html.match(
+        /\.reels-hook\s+li:hover\s+\.icon-wrap\s+svg\s+circle\s*\{[^}]*fill-opacity:\s*([^;}\s]+)/i
+      );
+      if (iconHover && !iconHover[1].includes('{')) styles.iconFillOpacityHover = iconHover[1].trim();
+
+      return styles;
+    }
+
+    function populateStyleForm(styles) {
+      document.querySelectorAll('#styleCard input[data-var]').forEach((input) => {
+        const key = input.dataset.var;
+        const format = input.dataset.format || 'text';
+        const raw = styles[key] ?? STYLE_DEFAULTS[key] ?? '';
+        if (format === 'hex') {
+          const hex = colorToHex(raw) || '';
+          input.value = hex;
+        } else {
+          input.value = raw;
+        }
+      });
+      syncColorPickersFromForm();
+    }
+
+    function getStyleFormValues() {
+      const values = { ...parsedStylesFromBytes, ...STYLE_DEFAULTS };
+      document.querySelectorAll('#styleCard input[data-var]').forEach((input) => {
+        const key = input.dataset.var;
+        const format = input.dataset.format || 'text';
+        const normalized = normalizeValue(input.value, format);
+        if (normalized) values[key] = normalized;
+      });
+      return values;
+    }
+
+    function applyVariable(html, varName, value) {
+      if (!value) return html;
+      const safe = escapeAttr(value);
+      const parts = html.split('{' + varName + '}');
+      if (parts.length > 1) html = parts.join(value);
+      html = html.replace(new RegExp('value="\\{' + varName + '\\}"', 'gi'), 'value="' + safe + '"');
+      html = html.replace(new RegExp('value=\\{' + varName + '\\}', 'gi'), 'value="' + safe + '"');
+      html = html.replace(
+        new RegExp('(name="' + varName + '"\\s+value=")([^"]*)(")', 'gi'),
+        '$1' + safe + '$3'
+      );
+      return html;
+    }
+
+    function applyCustomStyles(html, styles) {
+      let out = html;
+
+      document.querySelectorAll('#styleCard input[data-var]').forEach((input) => {
+        const varName = input.dataset.var;
+        const format = input.dataset.format || 'text';
+        const val = normalizeValue(styles[varName], format);
+        if (val) out = applyVariable(out, varName, val);
+      });
+
+      const slideW = normalizeValue(styles.slideWidth, 'px');
+      const slideH = normalizeValue(styles.slideHeight, 'px');
+      if (slideW) {
+        out = out.replace(
+          /(\.reels-hook\s+li\s*\{[^}]*width:\s*)(\{slideWidth\}|[^;!}]+)/i,
+          '$1' + slideW
+        );
+      }
+      if (slideH) {
+        out = out.replace(
+          /(\.reels-hook\s+li\s*\{[^}]*height:\s*)(\{slideHeight\}|[^;!}]+)/i,
+          '$1' + slideH
+        );
+        out = out.replace(
+          /(\.reels-hook\s+li\s+\.video-wrap\s*\{\s*height:\s*)(\{slideHeight\}|[^;}+]+)/i,
+          '$1' + slideH
+        );
+        out = out.replace(
+          /(\.hook-ed-wrapperouter\s*\{[^}]*height:\s*)(\{slideHeight\}|[^;}+]+)/i,
+          '$1' + slideH
+        );
+      }
+      if (slideW) {
+        out = out.replace(
+          /(\.hook-ed-wrapperouter\s*\{[^}]*width:\s*)(\{slideWidth\}|[^;}+]+)/i,
+          '$1' + slideW
+        );
+      }
+
+      const slideMargin = normalizeValue(styles.slideMarginRight, 'px');
+      if (slideMargin) {
+        out = out.replace(
+          /(\.reels-hook\s+li\s*\{[^}]*margin-right:\s*)(\{slideMarginRight\}|[^;!}]+)/i,
+          '$1' + slideMargin
+        );
+      }
+
+      const maxW = normalizeValue(styles.hookMaxWidth, 'px');
+      if (maxW) {
+        out = out.replace(
+          /(\.reels-hook-wrapper\s*\{\s*max-width:\s*)(\{hookMaxWidth\}|[^;}+]+)/i,
+          '$1' + maxW
+        );
+      }
+
+      const iconW = normalizeValue(styles.iconWrapWidth, 'px');
+      if (iconW) {
+        out = out.replace(
+          /(\.reels-hook\s+li\s+\.icon-wrap\s*\{[^}]*width:\s*)(\{iconWrapWidth\}|[^;]+)/i,
+          '$1' + iconW
+        );
+      }
+
+      const iconOp = normalizeValue(styles.iconFillOpacity, 'opacity');
+      if (iconOp) {
+        out = out.replace(
+          /(\.reels-hook\s+li\s+\.icon-wrap\s+svg\s+circle\s*\{fill-opacity:\s*)(\{iconFillOpacity\}|[^;}+]+)/i,
+          '$1' + iconOp
+        );
+      }
+
+      const iconOpHover = normalizeValue(styles.iconFillOpacityHover, 'opacity');
+      if (iconOpHover) {
+        out = out.replace(
+          /(\.reels-hook\s+li:hover\s+\.icon-wrap\s+svg\s+circle\s*\{[^}]*fill-opacity:)(\{iconFillOpacityHover\}|[^;}+]+)/i,
+          '$1' + iconOpHover
+        );
+      }
+
+      const ctaBorder = normalizeValue(styles.HookCTABorder, 'hex');
+      if (ctaBorder) {
+        const decl = 'border: 1px solid ' + ctaBorder + ';';
+        if (/\.reels-hook\s+li\s+\.cta-wrap\s*\{[^}]*border:/i.test(out)) {
+          out = out.replace(
+            /(\.reels-hook\s+li\s+\.cta-wrap\s*\{[^}]*)(border:\s*[^;]+;)/i,
+            '$1' + decl
+          );
+        } else {
+          out = out.replace(
+            /(\.reels-hook\s+li\s+\.cta-wrap\s*\{[^}]*font-family:[^;]+;)/i,
+            '$1\n    ' + decl
+          );
+        }
+      }
+
+      const ctaBorderHover = normalizeValue(styles.HookCTABorderHover, 'hex');
+      if (ctaBorderHover) {
+        out = out.replace(
+          /(\.reels-hook\s+li:hover\s+\.cta-wrap\s*\{[^}]*background:[^;]+;\s*)border:\s*[^;]+;/i,
+          '$1border: 1px solid ' + ctaBorderHover + ';'
+        );
+      }
+
+      return out;
+    }
+
+    const CREATOR_LOGO_CM_IMG = '<img src="<tag:image_path_new />/logo.svg" alt="">';
+
+    const BRANDING_DEFAULTS = {
+      topLeftLogoXlDesktop: '85px',
+      topLeftLogoDesktop: '85px',
+      MoreFromText: 'Cowboys & Indians',
+      creatorName: 'Cowboys & Indians',
+      topLeftLogoSvg: '',
+      creatorLogoSvg: '',
+      creatorLogoFromCm: false
+    };
+
+    const creatorLogoFromCmCheckbox = document.getElementById('creatorLogoFromCm');
+    const creatorLogoSvgFields = document.getElementById('creatorLogoSvgFields');
+    const creatorLogoCmHint = document.getElementById('creatorLogoCmHint');
+
+    let parsedBrandingFromFiles = { ...BRANDING_DEFAULTS };
+
+    function extractSvgPlaceholder(html, varName) {
+      const re = new RegExp('\\{' + varName + '\\}', 'i');
+      if (!re.test(html)) return '';
+      const idx = html.indexOf('{' + varName + '}');
+      if (idx === -1) return '';
+      const before = html.slice(Math.max(0, idx - 8000), idx);
+      const svgMatch = before.match(/<svg[\s\S]*<\/svg>\s*$/i);
+      return svgMatch ? svgMatch[0].trim() : '';
+    }
+
+    function parseBrandingFromFiles(bytesHtml, standardHtml) {
+      const combined = bytesHtml + '\n' + standardHtml;
+      const branding = { ...BRANDING_DEFAULTS };
+
+      const moreFrom = combined.match(/More from\s+([^<{]+)/i);
+      if (moreFrom) branding.MoreFromText = moreFrom[1].trim();
+
+      if (!combined.includes('{creatorName}')) {
+        const creator = combined.match(/video-branding[\s\S]{0,500}?<div class="text">\s*([^<{]+)/i)?.[1]?.trim();
+        if (creator) branding.creatorName = creator;
+      }
+
+      const xlW = combined.match(/header-panel-logo-desk\s*\{\s*width:\s*([^;}\s{]+)/i);
+      if (xlW && !xlW[1].includes('{')) branding.topLeftLogoXlDesktop = xlW[1].trim();
+
+      const deskW = combined.match(/max-height:\s*700px[\s\S]{0,120}?header-panel-logo-desk\s*\{\s*width:\s*([^;}\s{]+)/i);
+      if (deskW && !deskW[1].includes('{')) branding.topLeftLogoDesktop = deskW[1].trim();
+
+      branding.topLeftLogoSvg =
+        extractSvgPlaceholder(combined, 'topLeftLogoSvg') ||
+        (combined.match(/header-panel-logo-desk[\s\S]{0,800}?(<svg[\s\S]*?<\/svg>)/i)?.[1]?.trim() || '');
+      const cmImg = combined.match(/video-branding[\s\S]{0,800}?<img[^>]+logo\.svg/i);
+      if (cmImg) branding.creatorLogoFromCm = true;
+
+      if (!branding.creatorLogoFromCm) {
+        branding.creatorLogoSvg =
+          extractSvgPlaceholder(combined, 'creatorLogoSvg') ||
+          (combined.match(/video-branding[\s\S]{0,800}?(<svg[\s\S]*?<\/svg>)/i)?.[1]?.trim() || '');
+      }
+
+      return branding;
+    }
+
+    const SVG_FIELD_NAMES = ['topLeftLogoSvg', 'creatorLogoSvg'];
+
+    function getSvgInputMode(varName) {
+      const radio = document.querySelector('input[name="' + varName + 'Mode"]:checked');
+      return radio ? radio.value : 'paste';
+    }
+
+    function setSvgInputMode(varName, mode, userInitiated) {
+      const filesReady = Boolean(bytesContent && standardContent);
+      const fromCm = varName === 'creatorLogoSvg' && creatorLogoFromCmCheckbox.checked;
+      const blocked = !filesReady || fromCm;
+
+      const pastePanel = document.getElementById(varName + 'PastePanel');
+      const uploadPanel = document.getElementById(varName + 'UploadPanel');
+      const textarea = document.getElementById(varName);
+      const fileInput = document.querySelector('[data-upload-for="' + varName + '"]');
+      const uploadMsg = document.getElementById(varName + 'UploadMsg');
+
+      const isPaste = mode === 'paste';
+      if (pastePanel) pastePanel.hidden = !isPaste;
+      if (uploadPanel) uploadPanel.hidden = isPaste;
+
+      document.querySelectorAll('input[name="' + varName + 'Mode"]').forEach((r) => {
+        r.checked = r.value === mode;
+        r.disabled = blocked;
+      });
+
+      if (textarea) textarea.disabled = blocked || !isPaste;
+      if (fileInput) fileInput.disabled = blocked || isPaste;
+
+      if (userInitiated) {
+        if (isPaste) {
+          if (fileInput) fileInput.value = '';
+          if (uploadMsg) uploadMsg.textContent = '';
+        } else if (textarea) {
+          textarea.value = '';
+        }
+      }
+    }
+
+    function updateAllSvgInputModes() {
+      SVG_FIELD_NAMES.forEach((varName) => {
+        if (varName === 'creatorLogoSvg' && creatorLogoFromCmCheckbox.checked) return;
+        setSvgInputMode(varName, getSvgInputMode(varName));
+      });
+    }
+
+    function updateCreatorLogoMode() {
+      const fromCm = creatorLogoFromCmCheckbox.checked;
+      creatorLogoSvgFields.style.display = fromCm ? 'none' : 'block';
+      creatorLogoCmHint.hidden = !fromCm;
+      if (!fromCm) {
+        updateAllSvgInputModes();
+      } else {
+        const creatorUploadMsg = document.getElementById('creatorLogoSvgUploadMsg');
+        if (creatorUploadMsg) creatorUploadMsg.textContent = '';
+      }
+    }
+
+    function populateBrandingForm(branding) {
+      document.querySelectorAll('#brandingCard [data-brand-var]').forEach((el) => {
+        const key = el.dataset.brandVar;
+        const val = branding[key] ?? BRANDING_DEFAULTS[key] ?? '';
+        el.value = val;
+      });
+      creatorLogoFromCmCheckbox.checked = Boolean(branding.creatorLogoFromCm);
+      updateCreatorLogoMode();
+      updateAllSvgInputModes();
+    }
+
+    function getBrandingFormValues() {
+      const values = { ...parsedBrandingFromFiles, ...BRANDING_DEFAULTS };
+      values.creatorLogoFromCm = creatorLogoFromCmCheckbox.checked;
+
+      document.querySelectorAll('#brandingCard [data-brand-var]').forEach((el) => {
+        const key = el.dataset.brandVar;
+        const format = el.dataset.brandFormat || (el.dataset.brandType === 'svg' ? 'svg' : 'text');
+        let raw = el.value.trim();
+        if (values.creatorLogoFromCm && key === 'creatorLogoSvg') return;
+        if (format === 'svg') {
+          raw = getSvgFromField(key);
+          if (raw && !isValidSvg(raw)) return;
+        }
+        if (format === 'px') raw = normalizeValue(raw, 'px');
+        if (raw) values[key] = raw;
+      });
+      return values;
+    }
+
+    function applyBranding(html, branding) {
+      let out = html;
+
+      ['topLeftLogoXlDesktop', 'topLeftLogoDesktop', 'MoreFromText', 'creatorName'].forEach((key) => {
+        if (branding[key]) out = applyVariable(out, key, branding[key]);
+      });
+
+      if (branding.creatorLogoFromCm) {
+        if (out.includes('{creatorLogoSvg}')) {
+          out = out.split('{creatorLogoSvg}').join(CREATOR_LOGO_CM_IMG);
+        }
+      } else {
+        const svg = (branding.creatorLogoSvg || '').trim();
+        if (svg && isValidSvg(svg) && out.includes('{creatorLogoSvg}')) {
+          out = out.split('{creatorLogoSvg}').join(svg);
+        }
+      }
+
+      const topLeftSvg = (branding.topLeftLogoSvg || '').trim();
+      if (topLeftSvg && isValidSvg(topLeftSvg) && out.includes('{topLeftLogoSvg}')) {
+        out = out.split('{topLeftLogoSvg}').join(topLeftSvg);
+      }
+
+      return out;
+    }
+
+    creatorLogoFromCmCheckbox.addEventListener('change', updateCreatorLogoMode);
+
+    function setFilesReadyState() {
+      const ready = Boolean(bytesContent && standardContent);
+      styleCard.classList.toggle('card-disabled', !ready);
+      brandingCard.classList.toggle('card-disabled', !ready);
+      styleLockMsg.hidden = ready;
+      filesOkMsg.hidden = !ready;
+      document.querySelectorAll('#styleCard input[data-var]').forEach((input) => {
+        if (input.dataset.format !== 'hex') input.disabled = !ready;
+      });
+      setColorPickersDisabled(!ready);
+      creatorLogoFromCmCheckbox.disabled = !ready;
+      document.querySelectorAll('#brandingCard [data-brand-var]').forEach((el) => {
+        if (el.dataset.brandType !== 'svg') el.disabled = !ready;
+      });
+      if (ready) {
+        updateCreatorLogoMode();
+        updateAllSvgInputModes();
+      } else {
+        document.querySelectorAll('#brandingCard [data-brand-type="svg"], #brandingCard [data-upload-for], #brandingCard input[type="radio"][name$="Mode"]').forEach((el) => {
+          el.disabled = true;
+        });
+      }
+      mergeBtn.disabled = !ready;
+      previewBtn.disabled = !ready;
+      if (ready) {
+        parsedBrandingFromFiles = parseBrandingFromFiles(bytesContent, standardContent);
+        if (Object.keys(parsedStylesFromBytes).length) {
+          populateStyleForm(parsedStylesFromBytes);
+        }
+        populateBrandingForm(parsedBrandingFromFiles);
+      }
+    }
+
+    function getSvgFromField(varName) {
+      const textarea = document.getElementById(varName);
+      if (!textarea) return '';
+      return textarea.value.trim();
+    }
+
+    function isValidSvg(text) {
+      return Boolean(text && /<svg[\s>]/i.test(text));
+    }
+
+    SVG_FIELD_NAMES.forEach((varName) => {
+      document.querySelectorAll('input[name="' + varName + 'Mode"]').forEach((radio) => {
+        radio.addEventListener('change', () => {
+          if (radio.checked) setSvgInputMode(varName, radio.value, true);
+        });
+      });
+    });
+
+    document.querySelectorAll('[data-upload-for]').forEach((fileInput) => {
+      fileInput.addEventListener('change', async () => {
+        const file = fileInput.files[0];
+        const targetId = fileInput.dataset.uploadFor;
+        if (getSvgInputMode(targetId) !== 'upload') return;
+
+        const msgEl = document.getElementById(targetId + 'UploadMsg');
+        if (!file) {
+          if (msgEl) msgEl.textContent = '';
+          return;
+        }
+        try {
+          const text = (await readFile(file)).trim();
+          if (!isValidSvg(text)) {
+            if (msgEl) msgEl.textContent = '';
+            setStatus('Uploaded file does not look like SVG markup (<svg ...>).', 'error');
+            fileInput.value = '';
+            return;
+          }
+          const target = document.getElementById(targetId);
+          if (target) target.value = text;
+          if (msgEl) {
+            msgEl.textContent = 'Loaded: ' + file.name + ' (' + text.length + ' characters)';
+          }
+          clearStatus();
+        } catch (e) {
+          if (msgEl) msgEl.textContent = '';
+          setStatus(e.message, 'error');
+        }
+      });
+    });
+
+    function setStatus(message, type) {
+      statusEl.textContent = message;
+      statusEl.className = 'status show ' + type;
+    }
+
+    function clearStatus() {
+      statusEl.className = 'status';
+      statusEl.textContent = '';
+    }
+
+    function updateButtons() {
+      setFilesReadyState();
+    }
+
+    function outputFileName() {
+      const base = bytesFileName.replace(/\.html?$/i, '') || 'merged-output';
+      return `${base}-merged.html`;
+    }
+
+    function showStats(beforeLines, innerLines, totalLines) {
+      document.getElementById('statBefore').textContent = beforeLines;
+      document.getElementById('statInner').textContent = innerLines;
+      document.getElementById('statTotal').textContent = totalLines;
+      statsEl.hidden = false;
+    }
+
+    function download(text, filename) {
+      const blob = new Blob([text], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    bytesInput.addEventListener('change', async () => {
+      const file = bytesInput.files[0];
+      const nameEl = document.getElementById('bytesName');
+      if (!file) {
+        bytesContent = null;
+        bytesFileName = '';
+        nameEl.textContent = 'No file selected';
+        nameEl.classList.add('empty');
+        updateButtons();
+        return;
+      }
+      try {
+        bytesContent = await readFile(file);
+        bytesFileName = file.name;
+        nameEl.textContent = file.name;
+        nameEl.classList.remove('empty');
+        parsedStylesFromBytes = parseStylesFromBytes(bytesContent);
+        if (standardContent) {
+          parsedBrandingFromFiles = parseBrandingFromFiles(bytesContent, standardContent);
+          populateStyleForm(parsedStylesFromBytes);
+          populateBrandingForm(parsedBrandingFromFiles);
+        }
+        clearStatus();
+      } catch (e) {
+        bytesContent = null;
+        setStatus(e.message, 'error');
+      }
+      updateButtons();
+    });
+
+    standardInput.addEventListener('change', async () => {
+      const file = standardInput.files[0];
+      const nameEl = document.getElementById('standardName');
+      if (!file) {
+        standardContent = null;
+        standardFileName = '';
+        nameEl.textContent = 'No file selected';
+        nameEl.classList.add('empty');
+        updateButtons();
+        return;
+      }
+      try {
+        standardContent = await readFile(file);
+        standardFileName = file.name;
+        nameEl.textContent = file.name;
+        nameEl.classList.remove('empty');
+        if (bytesContent) {
+          parsedBrandingFromFiles = parseBrandingFromFiles(bytesContent, standardContent);
+          populateStyleForm(parsedStylesFromBytes);
+          populateBrandingForm(parsedBrandingFromFiles);
+        }
+        clearStatus();
+      } catch (e) {
+        standardContent = null;
+        setStatus(e.message, 'error');
+      }
+      updateButtons();
+    });
+
+    previewBtn.addEventListener('click', () => {
+      try {
+        const { beforeLines, innerLines, totalLines, swiperBundle, hookHandlerUncommented } =
+          mergeHtml(bytesContent, standardContent);
+        showStats(beforeLines, innerLines, totalLines);
+        let msg = `Ready to merge: ${beforeLines} lines from bytes-master + ${innerLines} lines from standard-implementation. Hook CSS values will be applied.`;
+        if (hookHandlerUncommented) {
+          msg += ' hookHandler.init() will be uncommented in ppCbReelJsReady (swiper bundle detected).';
+        }
+        setStatus(msg, 'info');
+      } catch (e) {
+        setStatus(e.message, 'error');
+      }
+    });
+
+    mergeBtn.addEventListener('click', () => {
+      try {
+        const { result, beforeLines, innerLines, totalLines, hookHandlerUncommented } =
+          mergeHtml(bytesContent, standardContent);
+        showStats(beforeLines, innerLines, totalLines);
+        const outName = outputFileName();
+        download(result, outName);
+        let msg = `Downloaded ${outName} successfully. Hook CSS and branding applied.`;
+        if (hookHandlerUncommented) {
+          msg += ' hookHandler.init() enabled in ppCbReelJsReady.';
+        }
+        setStatus(msg, 'success');
+      } catch (e) {
+        setStatus(e.message, 'error');
+      }
+    });
+
+    initColorPickers();
+    parsedStylesFromBytes = { ...STYLE_DEFAULTS };
+    setFilesReadyState();
+  </script>
+</body>
+</html>
